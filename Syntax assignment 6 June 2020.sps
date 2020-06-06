@@ -535,7 +535,7 @@ FACTOR
   /MISSING LISTWISE 
   /ANALYSIS ar2 ar3 ar4 ar5 ar6 ar7 ar9 ar10 ar12 ar13 ar15 ar17 ar18 ar19 ar20 ar21 ar22 ar23 ar26 
     ar27
-  /PRINT INITIAL KMO EXTRACTION ROTATION
+  /PRINT INITIAL CORRELATION KMO EXTRACTION ROTATION
   /FORMAT SORT
   /PLOT EIGEN
   /CRITERIA FACTORS(3) ITERATE(25)
@@ -561,3 +561,39 @@ FACTOR
   /CRITERIA ITERATE(25)
   /ROTATION VARIMAX
   /METHOD=CORRELATION.
+
+*Testing multivariate normality for EFA based on 20 items
+
+REGRESSION
+  /MISSING LISTWISE
+  /STATISTICS COEFF OUTS R ANOVA
+  /CRITERIA=PIN(.05) POUT(.10)
+  /NOORIGIN 
+  /DEPENDENT liberal
+  /METHOD=ENTER ar2 ar3 ar4 ar5 ar6 ar7 ar9 ar10 ar12 ar13 ar15 ar17 ar18 ar19 ar20 ar21 ar22 ar23 ar26 
+    ar27
+  /SAVE MAHAL.
+
+SORT CASES BY MAH_2(A).
+
+COMPUTE pval2=($CASENUM - 0.5)/151.
+EXECUTE.
+
+COMPUTE chi_sq2=IDF.CHISQ(pval2,20).
+EXECUTE.
+
+* Chart Builder - scatterplot chi squared values and Mahalanobis distance
+
+GGRAPH
+  /GRAPHDATASET NAME="graphdataset" VARIABLES=MAH_2 chi_sq2 MISSING=LISTWISE REPORTMISSING=NO
+  /GRAPHSPEC SOURCE=INLINE
+  /FITLINE TOTAL=NO.
+BEGIN GPL
+  SOURCE: s=userSource(id("graphdataset"))
+  DATA: MAH_2=col(source(s), name("MAH_2"))
+  DATA: chi_sq2=col(source(s), name("chi_sq2"))
+  GUIDE: axis(dim(1), label("Mahalanobis Distance"))
+  GUIDE: axis(dim(2), label("chi_sq"))
+  GUIDE: text.title(label("Simple Scatter of chi_sq by Mahalanobis Distance"))
+  ELEMENT: point(position(MAH_2*chi_sq2))
+END GPL.
